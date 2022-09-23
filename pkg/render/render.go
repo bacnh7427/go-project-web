@@ -1,6 +1,7 @@
 package render
 
 import (
+	"back-go-land/pkg/config"
 	"bytes"
 	"fmt"
 	"html/template"
@@ -9,30 +10,37 @@ import (
 	"path/filepath"
 )
 
+var functions = template.FuncMap{}
+
+var app *config.AppConfig
+
+func NewTemplates(a *config.AppConfig) {
+	app = a
+}
+
 // RenderTemplate renders a template
 func RenderTemplate(w http.ResponseWriter, tmpl string) {
 
-	// create a tenplate cache
-	tc, err := CreateTemplateCache()
-	if err != nil {
-		log.Fatal(err)
+	var tc map[string]*template.Template
+	if app.UseCache {
+		// get the template cache from the app config
+		tc = app.TemplateCache
+
+	} else {
+		tc, _ = CreateTemplateCache()
 	}
 
 	//get requested template from cache
 	t, ok := tc[tmpl]
 	if !ok {
-		log.Fatal(err)
+		log.Fatal("Could not get template from template cacshe")
 	}
 
 	buf := new(bytes.Buffer)
-	err = t.Execute(buf, nil)
+	_ = t.Execute(buf, nil)
 
-	if err != nil {
-		log.Println(err)
-	}
 	// render the template
-
-	_, err = buf.WriteTo(w)
+	_, err := buf.WriteTo(w)
 
 	if err != nil {
 		fmt.Println(err)
